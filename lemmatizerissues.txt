@@ -1,0 +1,10 @@
+was to wa
+helped to helped
+crews to crew
+U.S. to u
+exploded to exploded
+injuring to injuring
+Sandy to sandy
+Springs to spring
+
+- Maybe do some named entity recognition (not after a period but capital)

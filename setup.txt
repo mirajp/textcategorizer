@@ -1,0 +1,10 @@
+Installing instructions:
+  Installing NLTK:
+  sudo pip install -U nltk
+
+  Installing wordnet corpora:
+  python
+    >>> nltk.download()
+    >>> d
+    >>> wordnet
+

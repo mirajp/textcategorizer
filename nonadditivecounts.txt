@@ -1,0 +1,5 @@
+Oth dictionary has 29637 words
+Pol dictionary has 144499 words
+Cri dictionary has 51198 words
+Str dictionary has 154824 words
+Dis dictionary has 110118 words
