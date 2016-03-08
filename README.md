@@ -1,2 +1,2 @@
 # textcategorizer
-Naive Bayes Text Categorization Application
+NLP Text/Document Categorizer
