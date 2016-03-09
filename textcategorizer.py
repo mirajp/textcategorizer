@@ -3,6 +3,28 @@
 # Naive Bayes Text Categorizer
 
 from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet
+#import nltk.data, nltk.tag
+from nltk.tag import _pos_tag as postagger
+from nltk.tag.perceptron import PerceptronTagger
+#from nltk import pos_tag
+
+tagset = None
+tagger = PerceptronTagger()
+
+def get_wordnet_pos(treebank_tag):
+
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return ''
+
 lemmatizer = WordNetLemmatizer()
 
 # Use lemmatization as opposed to stemming to group words by meaning
@@ -40,7 +62,8 @@ for line in trainingList:
             foundWord = foundWord.replace(",", "")
             foundWord = foundWord.replace("!", "")
             foundWord = foundWord.replace("?", "")
-            foundWord = foundWord.replace(".", "")
+            #Remove last period, but not the period in initialization token
+            #foundWord = foundWord.replace(".", "")
             foundWord = foundWord.replace(":", "")
             foundWord = foundWord.replace(";", "")
             foundWord = foundWord.replace("\"", "")
@@ -51,9 +74,18 @@ for line in trainingList:
             foundWord = foundWord.replace(")", "")
             foundWord = foundWord.replace("-", "")
             
-            foundWord = lemmatizer.lemmatize(foundWord)
-            print "Changed from", words[wordIter], "to", foundWord
             if len(foundWord) > 0:
+                print "word =", foundWord
+                #posTag = (nltk.tag._pos_tag([foundWord], tagset, tagger))[0][1]
+                posTag = (postagger([foundWord], tagset, tagger))[0][1]
+                print posTag
+                #posTag = (tagger.tag([foundWord]))[0][1]
+                posTag = get_wordnet_pos(posTag)
+                print "pos =", posTag
+                foundWord = lemmatizer.lemmatize(foundWord)
+                print "Changed from", words[wordIter], "to", foundWord
+                
+
                 if foundWord not in catWords[trainingCat]:
                   catWords[trainingCat][foundWord] = alpha
                   catCounts[trainingCat] += alpha

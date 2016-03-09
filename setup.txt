@@ -7,4 +7,5 @@ Installing instructions:
     >>> nltk.download()
     >>> d
     >>> wordnet
-
+    >>> averaged_perceptron_tagger
+    
