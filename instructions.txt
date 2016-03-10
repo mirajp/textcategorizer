@@ -1,1 +1,2 @@
-corpus1_train.labels
+small_train.labels
+small_test.list

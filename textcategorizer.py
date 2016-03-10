@@ -4,13 +4,13 @@
 
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
-#import nltk.data, nltk.tag
 from nltk.tag import _pos_tag as postagger
 from nltk.tag.perceptron import PerceptronTagger
-#from nltk import pos_tag
 
 tagset = None
 tagger = PerceptronTagger()
+lemmatizer = WordNetLemmatizer()
+# Use lemmatization as opposed to stemming to group words by meaning
 
 def get_wordnet_pos(treebank_tag):
 
@@ -23,87 +23,94 @@ def get_wordnet_pos(treebank_tag):
     elif treebank_tag.startswith('R'):
         return wordnet.ADV
     else:
-        return ''
+        return wordnet.NOUN
 
-lemmatizer = WordNetLemmatizer()
+def clean_word(input_word):
+    cleaned_word = input_word.replace(",", "")
+    cleaned_word = cleaned_word.replace("!", "")
+    cleaned_word = cleaned_word.replace("?", "")
+    #Remove last period, but not the period in initialization token
+    #cleaned_word = cleaned_word.replace(".", "")
+    if cleaned_word.find('.') == len(cleaned_word)-1:
+        cleaned_word = cleaned_word[:-1]
 
-# Use lemmatization as opposed to stemming to group words by meaning
+    cleaned_word = cleaned_word.replace(":", "")
+    cleaned_word = cleaned_word.replace(";", "")
+    cleaned_word = cleaned_word.replace("\"", "")
+    cleaned_word = cleaned_word.replace("\'", "")
+    cleaned_word = cleaned_word.replace("~", "")
+    cleaned_word = cleaned_word.replace("`", "")
+    cleaned_word = cleaned_word.replace("(", "")
+    cleaned_word = cleaned_word.replace(")", "")
+    cleaned_word = cleaned_word.replace("-", "")
+
+    if len(cleaned_word) > 0:
+        #print "word =", cleaned_word
+        #posTag = (nltk.tag._pos_tag([cleaned_word], tagset, tagger))[0][1]
+        posTag = (postagger([cleaned_word], tagset, tagger))[0][1]
+        #print posTag
+        #posTag = (tagger.tag([cleaned_word]))[0][1]
+        posTag = get_wordnet_pos(posTag)
+        #print "pos =", posTag
+        cleaned_word = (lemmatizer.lemmatize(cleaned_word, posTag)).lower()
+        #print "Changed from", words[wordIter], "to", cleaned_word
+
+    return cleaned_word
 
 trainingList = raw_input('Enter the filename of the list of training documents: ')
-#testingList = raw_input('Enter the filename of the list of testing documents: ')
-
-trainingList = open(trainingList, "rb")
-#testingList = open(testingList, "rb")
+testingList = raw_input('Enter the filename of the list of testing documents: ')
 
 # alpha = additive smoothing factor, 0 < alpha <= 1
 alpha = 1
 catWords = {}
 catCounts = {}
 
-count = 1
+trainingList = open(trainingList, "rb")
 for line in trainingList:
     line = line.split()
     trainingDoc = line[0]
     trainingCat = line[1]
-    print "Line #", count, ", file: ", trainingDoc, ", cat: ", trainingCat
+    print "File: ", trainingDoc, ", cat: ", trainingCat
     if trainingCat not in catWords:
         print "Adding dictionary for category:", trainingCat
         catWords[trainingCat] = {}
         catCounts[trainingCat] = 0
     
     trainingDoc = open(trainingDoc, "rb")
-    wordCount = 1
     for line in trainingDoc:
         words = line.split()
         numWords = len(words)
         wordIter = 0
         while wordIter < numWords:
-            foundWord = (words[wordIter]).lower()
-            foundWord = foundWord.replace(",", "")
-            foundWord = foundWord.replace("!", "")
-            foundWord = foundWord.replace("?", "")
-            #Remove last period, but not the period in initialization token
-            #foundWord = foundWord.replace(".", "")
-            foundWord = foundWord.replace(":", "")
-            foundWord = foundWord.replace(";", "")
-            foundWord = foundWord.replace("\"", "")
-            foundWord = foundWord.replace("\'", "")
-            foundWord = foundWord.replace("~", "")
-            foundWord = foundWord.replace("`", "")
-            foundWord = foundWord.replace("(", "")
-            foundWord = foundWord.replace(")", "")
-            foundWord = foundWord.replace("-", "")
+            #Turns out capitalization affects POS tag
+            #cleaned_word = (words[wordIter]).lower()
+            foundWord = clean_word(words[wordIter])
             
             if len(foundWord) > 0:
-                print "word =", foundWord
-                #posTag = (nltk.tag._pos_tag([foundWord], tagset, tagger))[0][1]
-                posTag = (postagger([foundWord], tagset, tagger))[0][1]
-                print posTag
-                #posTag = (tagger.tag([foundWord]))[0][1]
-                posTag = get_wordnet_pos(posTag)
-                print "pos =", posTag
-                foundWord = lemmatizer.lemmatize(foundWord)
-                print "Changed from", words[wordIter], "to", foundWord
-                
-
                 if foundWord not in catWords[trainingCat]:
                   catWords[trainingCat][foundWord] = alpha
                   catCounts[trainingCat] += alpha
                 
                 catWords[trainingCat][foundWord] += 1
                 catCounts[trainingCat] += 1
-                
-                #print "Word #", wordCount, foundWord
-                wordCount += 1
-                
+            
             wordIter += 1
-    
-    count += 1
-    if count > 1:
-        break
 
-for key in catCounts:
-  print key, "dictionary has", catCounts[key], "words"
+    trainingDoc.close()
 
 trainingList.close()
-#testingList.close()
+
+
+for category in catCounts:
+  print category, "dictionary has", catCounts[category], "total words"
+  #for uniqueword in catWords[category]:
+    #print "\t", uniqueword, "appears", catWords[category][uniqueword], "times"
+
+testingList = open(testingList, "rb")
+for testingDoc in testingList:
+    testingDoc = (testingDoc.split())[0]
+    print "File: ", testingDoc
+    testingDoc = open(testingDoc, "rb")
+    testingDoc.close()
+
+testingList.close()
