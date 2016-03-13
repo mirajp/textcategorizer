@@ -14,7 +14,6 @@ from math import log
 #tagger = PerceptronTagger()
 #lemmatizer = WordNetLemmatizer()
 stemmer = SnowballStemmer("english")
-# Use lemmatization as opposed to stemming to group words by meaning
 
 # alpha = additive smoothing factor, 0 < alpha <= 1
 alpha = 0.000005
@@ -35,6 +34,7 @@ testingList = raw_input('Enter the filename of the list of testing documents: ')
 predictionsList = raw_input('Enter the filename to save the predictions: ')
 #print "\n"
 
+"""
 def get_wordnet_pos(treebank_tag):
 
     if treebank_tag.startswith('J'):
@@ -47,6 +47,7 @@ def get_wordnet_pos(treebank_tag):
         return wordnet.ADV
     else:
         return wordnet.NOUN
+"""
 
 def clean_word(input_word):
     cleaned_word = input_word.replace(",", "")
@@ -76,7 +77,7 @@ def clean_word(input_word):
     
 
     """
-    #Lemmatize
+    #Lemmatize - surprisingly a little worse performance than stemming
     if len(cleaned_word) > 0:
         #print "word =", cleaned_word
         #posTag = (nltk.tag._pos_tag([cleaned_word], tagset, tagger))[0][1]
@@ -118,30 +119,20 @@ for line in trainingList:
                 if foundWord not in vocab:
                     vocab[foundWord] = 1
                     vocabSize += 1
-
+                 
                 if foundWord not in wordsCount[trainingCat]:
                     wordsCount[trainingCat][foundWord] = alpha + 1
                 else:
                     wordsCount[trainingCat][foundWord] += 1    
                     #totalCount[trainingCat] += alpha
-            
+
             wordIter += 1
 
     docCount[trainingCat] += 1
     numDocuments += 1
     trainingDoc.close()
-    #if numDocuments > 100:
-    #    break
 
 trainingList.close()
-
-"""
-for category in totalCount:
-    print "Printing category:", category
-    for uniqueword in wordsCount[category]:
-        print "\t", category, "--", uniqueword, ":", wordsCount[category][uniqueword], "/", (totalCount[category] + alpha*vocabSize)
-    print "\n\n"
-"""
 
 testingList = open(testingList, "rb")
 predictionsList = open(predictionsList, "wb")
@@ -163,19 +154,14 @@ for testingDocName in testingList:
             
             for category in wordsCount:
                 if foundWord in wordsCount[category]:
-                    #print "Numerator:", (wordsCount[category][foundWord])
-                    #print "Denominator:", (totalCount[category])
-                    #print "Fraction:", float(wordsCount[category][foundWord])/float(totalCount[category])
-                    
-                    testProbs[category] += log(float(wordsCount[category][foundWord]/(totalCount[category] + alpha*vocabSize)))
+                    testProbs[category] += log((wordsCount[category][foundWord]/(totalCount[category] + alpha*vocabSize)))
                 else:
-                    testProbs[category] += log(float(alpha/(totalCount[category] + alpha*vocabSize)))
+                    testProbs[category] += log((alpha/(totalCount[category] + alpha*vocabSize)))
                     
             wordIter += 1
 
     for category in wordsCount:
-        #print "category '", category, "' prob:", float(docCount[category]/numDocuments), "logval =", log(float(docCount[category]/numDocuments)) 
-        testProbs[category] += log(float(docCount[category]/numDocuments))
+        testProbs[category] += log((docCount[category]/numDocuments))
         
     testingDoc.close()
     maxProb = float("-inf")
