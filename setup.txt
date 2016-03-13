@@ -4,8 +4,13 @@ Installing instructions:
 
   Installing wordnet corpora:
   python
+    >>> import nltk
     >>> nltk.download()
     >>> d
     >>> wordnet
+    >>> d
     >>> averaged_perceptron_tagger
-    
+	>>> d
+	>>> stopwords
+	>>> q
+	>>> exit()   
