@@ -2,22 +2,22 @@
 # Miraj Patel
 # Naive Bayes Text Categorizer
 
-from nltk.stem import WordNetLemmatizer
+#from nltk.stem import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
-from nltk.corpus import wordnet
+#from nltk.corpus import wordnet
 from nltk.corpus import stopwords
-from nltk.tag import _pos_tag as postagger
-from nltk.tag.perceptron import PerceptronTagger
+#from nltk.tag import _pos_tag as postagger
+#from nltk.tag.perceptron import PerceptronTagger
 from math import log
 
-tagset = None
-tagger = PerceptronTagger()
-lemmatizer = WordNetLemmatizer()
+#tagset = None
+#tagger = PerceptronTagger()
+#lemmatizer = WordNetLemmatizer()
 stemmer = SnowballStemmer("english")
 # Use lemmatization as opposed to stemming to group words by meaning
 
 # alpha = additive smoothing factor, 0 < alpha <= 1
-alpha = 0.0005
+alpha = 0.000005
 #Count number of times each word appears in each category
 wordsCount = {}
 #Count the total number of words in each category
