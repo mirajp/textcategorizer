@@ -14,9 +14,14 @@ from math import log
 #tagger = PerceptronTagger()
 #lemmatizer = WordNetLemmatizer()
 stemmer = SnowballStemmer("english")
+engstopwords = stopwords.words('english')
+mystopwords = {}
+
+for i in range(0, len(engstopwords)):
+    mystopwords[engstopwords[i]] = 1
 
 # alpha = additive smoothing factor, 0 < alpha <= 1
-alpha = 0.000005
+alpha = 0.045
 #Count number of times each word appears in each category
 wordsCount = {}
 #Count the total number of words in each category
@@ -50,11 +55,12 @@ def get_wordnet_pos(treebank_tag):
 """
 
 def clean_word(input_word):
-    cleaned_word = input_word.replace(",", "")
+    cleaned_word = input_word.lower()
+    cleaned_word = cleaned_word.replace(",", "")
     cleaned_word = cleaned_word.replace("!", "")
     cleaned_word = cleaned_word.replace("?", "")
+    
     #Remove last period, but not the period in initialization token
-    #cleaned_word = cleaned_word.replace(".", "")
     if cleaned_word.find('.') == len(cleaned_word)-1:
         cleaned_word = cleaned_word[:-1]
 
@@ -68,9 +74,9 @@ def clean_word(input_word):
     cleaned_word = cleaned_word.replace(")", "")
     cleaned_word = cleaned_word.replace("-", "")
 
-    cleaned_word = cleaned_word.lower()
-
-    
+    #Remove the 't of words like can't and haven't so they are matched to the stopwords list
+    cleaned_word = cleaned_word.replace("'t", "")
+        
     #Stem
     if len(cleaned_word) > 0:
         cleaned_word = stemmer.stem(cleaned_word)
@@ -113,7 +119,9 @@ for line in trainingList:
         while wordIter < numWords:
             foundWord = clean_word(words[wordIter])
             
-            if len(foundWord) > 0 and foundWord not in stopwords.words('english'):
+            #if len(foundWord) > 0 and foundWord not in stopwords.words('english'):
+            #if len(foundWord) > 0:
+            if len(foundWord) > 0 and foundWord not in mystopwords:
                 totalCount[trainingCat] += 1
                 
                 if foundWord not in vocab:
@@ -124,7 +132,6 @@ for line in trainingList:
                     wordsCount[trainingCat][foundWord] = alpha + 1
                 else:
                     wordsCount[trainingCat][foundWord] += 1    
-                    #totalCount[trainingCat] += alpha
 
             wordIter += 1
 
@@ -151,13 +158,15 @@ for testingDocName in testingList:
             #Turns out capitalization affects POS tag
             #cleaned_word = (words[wordIter]).lower()
             foundWord = clean_word(words[wordIter])
-            
-            for category in wordsCount:
-                if foundWord in wordsCount[category]:
-                    testProbs[category] += log((wordsCount[category][foundWord]/(totalCount[category] + alpha*vocabSize)))
-                else:
-                    testProbs[category] += log((alpha/(totalCount[category] + alpha*vocabSize)))
-                    
+
+            #if len(foundWord) > 0:
+            if len(foundWord) > 0 and foundWord not in mystopwords:
+                for category in wordsCount:
+                    if foundWord in wordsCount[category]:
+                        testProbs[category] += log((wordsCount[category][foundWord]/(totalCount[category] + alpha*vocabSize)))
+                    else:
+                        testProbs[category] += log((alpha/(totalCount[category] + alpha*vocabSize)))
+                            
             wordIter += 1
 
     for category in wordsCount:
