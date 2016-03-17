@@ -1,3 +1,0 @@
-corpus1_train.labels
-corpus1_test.list
-corpus1_predictions.labels
