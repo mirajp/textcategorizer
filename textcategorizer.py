@@ -106,6 +106,9 @@ def trainNaiveBayes(trainingList):
     #Use stopwords for only the first corpus
     if firstCat == "str" or firstCat == "pol" or firstCat == "dis" or firstCat == "cri" or firstCat == "oth":
         useStopWords = 1
+        print "Using stop words"
+    else:
+        print "Not using stop words"
 
     #Reset file pointer
     trainingListFile.seek(startOfFile)
