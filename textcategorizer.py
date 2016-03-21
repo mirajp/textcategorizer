@@ -6,6 +6,7 @@ from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import stopwords
 from math import log
 
+useStemmer = 1
 #By default, don't use stopwords (only use for corpus1)
 useStopWords = 0
 stemmer = SnowballStemmer("english")
@@ -16,6 +17,7 @@ for i in range(0, len(engstopwords)):
     mystopwords[engstopwords[i]] = 1
 
 # alpha = additive smoothing factor, 0 < alpha <= 1
+#alpha = 0.15
 alpha = 0.05
 
 #Count number of times each word appears in each category
@@ -35,7 +37,7 @@ testProbs = {}
 trainingDocs = {}
 
 def clean_word(input_word):
-    global useStopWords
+    global useStemmer
     cleaned_word = input_word.lower()
     cleaned_word = cleaned_word.replace(",", "")
     cleaned_word = cleaned_word.replace("!", "")
@@ -54,20 +56,21 @@ def clean_word(input_word):
     cleaned_word = cleaned_word.replace(")", "")
     cleaned_word = cleaned_word.replace("-", "")
 
-    if useStopWords == 1:
+    if useStemmer == 1:
         #Remove the 't of words like can't and haven't so they are matched to the stopwords list
+        cleaned_word = cleaned_word.replace("n't", "")
         cleaned_word = cleaned_word.replace("'t", "")
      
-    cleaned_word = cleaned_word.replace("\'", "")
+    cleaned_word = cleaned_word.replace("'", "")
         
     #Stem
-    if len(cleaned_word) > 0 and useStopWords == 1:
+    if len(cleaned_word) > 0 and useStemmer == 1:
         cleaned_word = stemmer.stem(cleaned_word)
     
     return cleaned_word
 
 def trainWithDoc(fileName, category):
-    global alpha, vocabSize, numDocuments
+    global alpha, vocabSize, numDocuments, useStopWords
     trainingDoc = open(fileName, "rb")
     for line in trainingDoc:
         words = line.split()
@@ -76,16 +79,28 @@ def trainWithDoc(fileName, category):
         while wordIter < numWords:
             foundWord = clean_word(words[wordIter])
 
-            if len(foundWord) > 0 and foundWord not in mystopwords:
-                totalCount[category] += 1
-                if foundWord not in vocab:
-                    vocab[foundWord] = 1
-                    vocabSize += 1
-                 
-                if foundWord not in wordsCount[category]:
-                    wordsCount[category][foundWord] = alpha + 1
-                else:
-                    wordsCount[category][foundWord] += 1    
+            if useStopWords:
+                if len(foundWord) > 0 and foundWord not in mystopwords:
+                    totalCount[category] += 1
+                    if foundWord not in vocab:
+                        vocab[foundWord] = 1
+                        vocabSize += 1
+                     
+                    if foundWord not in wordsCount[category]:
+                        wordsCount[category][foundWord] = alpha + 1
+                    else:
+                        wordsCount[category][foundWord] += 1
+            else:
+                if len(foundWord) > 0:
+                    totalCount[category] += 1
+                    if foundWord not in vocab:
+                        vocab[foundWord] = 1
+                        vocabSize += 1
+                     
+                    if foundWord not in wordsCount[category]:
+                        wordsCount[category][foundWord] = alpha + 1
+                    else:
+                        wordsCount[category][foundWord] += 1
 
             wordIter += 1
 
@@ -97,6 +112,7 @@ def trainWithDoc(fileName, category):
 def trainNaiveBayes(trainingList):
     global useStopWords
     trainingListFile = open(trainingList, "rb")
+    
     startOfFile = trainingListFile.tell()
     firstLine = trainingListFile.readline()
     firstLine = firstLine.split()
@@ -106,13 +122,10 @@ def trainNaiveBayes(trainingList):
     #Use stopwords for only the first corpus
     if firstCat == "str" or firstCat == "pol" or firstCat == "dis" or firstCat == "cri" or firstCat == "oth":
         useStopWords = 1
-        print "Using stop words"
-    else:
-        print "Not using stop words"
 
     #Reset file pointer
     trainingListFile.seek(startOfFile)
-
+    
     for line in trainingListFile:
         line = line.split()
         trainingDoc = line[0]
@@ -132,7 +145,7 @@ def trainNaiveBayes(trainingList):
     return
 
 def makePrediction(fileName):
-    global alpha, vocabSize, numDocuments
+    global alpha, vocabSize, numDocuments, useStopWords
     prediction = ""
     testingDoc = open(fileName, "rb")
     for category in testProbs:
@@ -145,13 +158,21 @@ def makePrediction(fileName):
         while wordIter < numWords:
             foundWord = clean_word(words[wordIter])
 
-            if len(foundWord) > 0 and foundWord not in mystopwords:
-                for category in testProbs:
-                    if foundWord in wordsCount[category]:
-                        testProbs[category] += log((wordsCount[category][foundWord]/(totalCount[category] + alpha*vocabSize)))
-                    else:
-                        testProbs[category] += log((alpha/(totalCount[category] + alpha*vocabSize)))
-                            
+            if useStopWords:
+                if len(foundWord) > 0 and foundWord not in mystopwords:
+                    for category in testProbs:
+                        if foundWord in wordsCount[category]:
+                            testProbs[category] += log((wordsCount[category][foundWord]/(totalCount[category] + alpha*vocabSize)))
+                        else:
+                            testProbs[category] += log((alpha/(totalCount[category] + alpha*vocabSize)))
+            else:
+                if len(foundWord) > 0:
+                    for category in testProbs:
+                        if foundWord in wordsCount[category]:
+                            testProbs[category] += log((wordsCount[category][foundWord]/(totalCount[category] + alpha*vocabSize)))
+                        else:
+                            testProbs[category] += log((alpha/(totalCount[category] + alpha*vocabSize)))
+
             wordIter += 1
 
     for category in testProbs:
